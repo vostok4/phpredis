@@ -1,0 +1,9 @@
+#!/bin/bash
+
+VERSION=$1
+cd /root
+wget http://download.redis.io/releases/redis-$VERSION.tar.gz
+tar -xvzf redis-$VERSION.tar.gz
+ln -s redis-$VERSION redis
+make clean all test -C redis
+

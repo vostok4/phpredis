@@ -1,0 +1,16 @@
+FROM ubuntu:precise
+
+MAINTAINER Nicolas Favre-Felix <n.favrefelix@gmail.com>, Michael Grunder <michael.grunder@gmail.com>
+
+# Dependencies
+RUN apt-get install -y wget build-essential
+
+# Install Redis
+ADD install-redis /usr/bin/install-redis
+RUN install-redis VERSION
+
+# Set default command
+CMD ["/root/redis/src/redis-server"]
+
+# Port forwarding
+EXPOSE 6379
