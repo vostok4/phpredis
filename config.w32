@@ -5,17 +5,27 @@ ARG_ENABLE("redis-session", "whether to enable sessions", "yes");
 ARG_ENABLE("redis-igbinary", "whether to enable igbinary serializer support", "no");
 
 if (PHP_REDIS != "no") {
-	var sources = "redis.c library.c redis_array.c redis_array_impl.c";
+	EXTENSION("redis", "redis.c");
+	ADD_SOURCES(configure_module_dirname, "library.c", "redis", configure_module_dirname);
+	ADD_SOURCES(configure_module_dirname, "redis_array.c", "redis", configure_module_dirname);
+	ADD_SOURCES(configure_module_dirname, "redis_array_impl.c", "redis", configure_module_dirname);
 	if (PHP_REDIS_SESSION != "no") {
-		AC_DEFINE('PHP_SESSION', 1);
-		sources += " redis_session.c";
+		ADD_EXTENSION_DEP('redis', 'session');
+		ADD_SOURCES(configure_module_dirname, "redis_session.c", "redis", configure_module_dirname);
 	}
 
 	if (PHP_REDIS_IGBINARY != "no") {
-		CHECK_HEADER_ADD_INCLUDE("igbinary.h", "CFLAGS_REDIS", "ext\\igbinary");
+		// We do not need php_igbinary.dll, because the igbinary functions are built into php_redis.dll
+		var igbinary_dirname = configure_module_dirname + "\\..\\igbinary";
+		CHECK_HEADER_ADD_INCLUDE("igbinary.h", "CFLAGS_REDIS", igbinary_dirname);
 		AC_DEFINE('HAVE_REDIS_IGBINARY', 1);
-		ADD_EXTENSION_DEP('redis', 'igbinary');
+		ADD_SOURCES(igbinary_dirname, "igbinary.c", "redis", configure_module_dirname);
+		ADD_SOURCES(igbinary_dirname, "hash_si.c", "redis", configure_module_dirname);
+		ADD_SOURCES(igbinary_dirname, "hash_function.c", "redis", configure_module_dirname);
+		// Allow multiple ZEND_GET_MODULE()s, in redis.c and igbinary.c
+		// Configure.js puts redis.obj before igbinary.obj:
+		// ZEND_GET_MODULE(redis) is executed and ZEND_GET_MODULE(igbinary) ignored
+		ADD_FLAG("LDFLAGS_REDIS", "/FORCE:MULTIPLE");
 	}
 
-	EXTENSION("redis", sources);
 }
